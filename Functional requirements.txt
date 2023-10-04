@@ -1,0 +1,148 @@
+Авторизация и управление пользователями:
+1. Регистрация новых пользователей с указанием логина, пароля, email.
+2. Пользователь может указывать адреса доставок.
+3. Пользователь должен до оформления заказа указать своё ФИО и контактный телефон.
+4. Возможность изменения персональной информации пользователя.
+5. Удаление учётной записью пользователя.
+
+Система ролей:
+1. Администратор: имеет полный доступ ко всем функциям администрирования магазина, включая управление товарами и пользователями.
+2. Пользователь: может просматривать товары, оформлять заказы и управлять своей учетной записью.
+3. Гость: может просматривать товары, но не имеет доступа к функциям пользователя.
+
+Журналирование действий пользователя:
+1. Регистрация и хранение логов всех действий пользователей (оформление заказа, изменение данных и т. д.)
+
+Управление товарами:
+1. Добавление, редактирование и удаление товаров с указанием названия, описания, категории, цены, наличия на складе, поставщиков и изображений.
+2. Категоризация товаров для удобной навигации.
+
+Система корзины:
+1. Добавление товаров в корзину, сохранение их между сеансами пользователя.
+2. Оформление заказа на основе содержимого корзины.
+
+Управление заказами:
+1. Создание новых заказов с указанием выбранных товаров и контактной информации покупателя.
+2. Просмотр даты заказа и предполагаемой даты прибытия товара.
+3. Учет истории заказов для каждого пользователя.
+
+Управление отзывами:
+1. Добавление отзывов и оценок для товаров.
+2. Возможность изменения и удаления отзывов.
+
+Управление акциями и промокодами:
+1. Возможность администратору создавать новые акции и вводить промокоды, а так же их срок действия.
+2. Возможность заканчивать срок действий акций и промокодов до окончания срока действия.
+
+Управление поставщиками:
+1. Изменение информаци поставщиков.
+2. Добавление новых поставщиков.
+3. Удаление поставщиков.
+4. Возможность добавлять и изменять наличие товара у поставщиков.
+
+Таблицы:
+
+User:
+user_id - bigint (PK)
+username - bigint: LENGTH BETWEEN 3 AND 16
+password - text: LENGTH BETWEEN 8 AND 46
+email - text - text?: '.@.+..' not null
+role_id - bigint (FK, связь с Roles)
+name - text?
+last_name - text?
+patronymic - text?
+
+Roles
+role_id - bigint (PK)
+role_name
+
+Reviews:
+review_id - bigint (PK)
+product_id - bigint (FK, связь с Product)
+user_id - bigint (FK, связь с User)
+comment - text: LENGTH BETWEEN 6 AND 400
+review_date - timestamp
+
+Addresses:
+adress_id - bigint (PK)
+user_id - bigint (FK, связь с User)
+adress - text: LENGTH BETWEEN 2 AND 200
+
+Logs:
+log_id - bigint (PK)
+user_id - bigint (FK, связь с User)
+action - action_type
+action_date - timestamp
+previous_value - text?
+new_value - text?
+
+Orders (MTM с Product): 
+order_id - bigint (PK)
+user_id - bigint (FK, связь с User)
+
+OrderProduct:
+order_id - bigint (FK, связь с Orders)
+product_id - bigint (FK, связь с Product)
+quantity - bigint: CHECK (quantity > 0)
+price - numeric: CHECK (price > 0)
+adress_id - bigint (FK, связь с Addresses)
+phone_number - text: CHECK (phone_number ~ '^\+\d{1,3} \(\d{1,3}\) \d{1,4}-\d{1,4}$')
+order_date - timestamp
+eta - timestamp
+
+Suppliers (MTM с Product):
+supplier_id - bigint (PK)
+supplier_name - text
+phone_number - text: CHECK (phone_number ~ '^\+\d{1,3} \(\d{1,3}\) \d{1,4}-\d{1,4}$')
+adress - text
+
+SupplierProduct:
+supplier_id - bigint (FK, связь с Suppliers)
+product_id  - bigint (FK, связь с Product)
+quantity - bigint: CHECK (quantity >= 0)
+
+CartProduct:
+cart_id - bigint (FK, связь с CartItems)
+user_id - bigint (FK, связь с User)
+
+CartItems (MTM с Product):
+cart_id - bigint (PK)
+user_id - bigint (FK, связь с CartProduct)
+
+Product (MTM с CartItems, Suppliers, PromoCodes и Discounts, Orders):
+product_id - bigint (PK)
+product_name - text: CHECK (LENGTH(product_name) > 2)
+description - text?
+price - numeric: CHECK (price > 0)
+stock_quantity - bigint: CHECK (stock_quantity >= 0)
+category_id - bigint (FK, связь с Categories)
+
+Categories:
+category_id - bigint (PK)
+category_name - text
+Discounts (MTM с Product):
+discount_id - bigint (PK)
+start_date - timestamp
+end_date - timestamp
+discount_percentage - numeric: CHECK (discount_percentage >= 0.1 AND discount_percentage <= 100)
+
+PromoCodes (MTM с Product):
+promoCode_id - bigint (PK)
+start_date - timestamp
+end_date - timestamp
+type - promoCode_type
+value - numeric: CHECK (value >= 0.1 AND value <= 100)
+
+PromoCodeProduct:
+promoCode_id - bigint (FK, связь с PromoCodes)
+product_id - bigint? (FK, связь с Product)
+category_id - bigint? (FK, связь с Categories)
+
+DiscountProduct:
+discount_id - bigint (FK, связь с Discounts)
+product_id - bigint (FK, связь с Product)
+
+ProductImages:
+image_id - bigint (PK)
+product_id - bigint (FK, связь с Product)
+image_url - text
